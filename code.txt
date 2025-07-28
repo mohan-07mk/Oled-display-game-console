@@ -1,0 +1,76 @@
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define BUTTON_PIN 2
+int birdY = 32;
+int velocity = 0;
+int gravity = 1;
+int flap = -5;
+
+int pipeX = SCREEN_WIDTH;
+int gapY = 30;
+int gapHeight = 20;
+
+bool gameOver = false;
+
+void setup() {
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(1);
+  display.setCursor(30, 25);
+  display.println("FLAPPY BIRD");
+  display.display();
+  delay(1000);
+}
+
+void loop() {
+  if (!gameOver) {
+    if (digitalRead(BUTTON_PIN) == LOW) {
+      velocity = flap;
+    }
+
+    velocity += gravity;
+    birdY += velocity;
+
+    pipeX -= 2;
+    if (pipeX < -10) {
+      pipeX = SCREEN_WIDTH;
+      gapY = random(10, SCREEN_HEIGHT - gapHeight - 10);
+    }
+
+    if (birdY < 0 || birdY > SCREEN_HEIGHT || 
+        (pipeX < 10 && (birdY < gapY || birdY > gapY + gapHeight))) {
+      gameOver = true;
+    }
+
+    display.clearDisplay();
+
+    // Draw bird
+    display.fillCircle(10, birdY, 2, SSD1306_WHITE);
+
+    // Draw pipe
+    display.fillRect(pipeX, 0, 10, gapY, SSD1306_WHITE);
+    display.fillRect(pipeX, gapY + gapHeight, 10, SCREEN_HEIGHT - (gapY + gapHeight), SSD1306_WHITE);
+
+    display.display();
+    delay(30);
+  } else {
+    display.clearDisplay();
+    display.setCursor(30, 25);
+    display.println("Game Over");
+    display.display();
+    delay(2000);
+    birdY = 32;
+    velocity = 0;
+    pipeX = SCREEN_WIDTH;
+    gameOver = false;
+  }
+}
